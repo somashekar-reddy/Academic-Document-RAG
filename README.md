@@ -1,5 +1,3 @@
-# Academic-Document-RAG
-Academic Document RAG system using n8n, Mistral OCR, Gemini, embeddings, and Pinecone.
 # Academic Document RAG
 
 An AI-powered **Retrieval-Augmented Generation (RAG)** system that allows users to upload academic documents such as textbooks and research papers and ask questions about their content.
