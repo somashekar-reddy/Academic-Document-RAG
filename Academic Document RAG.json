@@ -1,0 +1,171 @@
+{
+  "name": "My Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -784,
+        144
+      ],
+      "id": "af9574a3-76b7-4394-9cbe-f28565f337d0",
+      "name": "When chat message received",
+      "webhookId": "d7c620e6-8566-4d26-8ae6-862c9c5c3b71"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "\nYou are an AI Academic Document Retrieval and Question-Answering Agent.\n\nYour job is to help users understand and search information from uploaded textbooks, research papers, articles, lecture notes, study materials, and other academic documents.\n\nThe uploaded documents are the primary source of information.\n\n==================================================\nCORE RESPONSIBILITIES\n=====================\n\nYour job is to:\n\n1. Understand the user's question.\n2. Retrieve the most relevant information from the uploaded documents.\n3. Answer questions using the retrieved document content.\n4. Summarize relevant pages, sections, chapters, or passages when requested.\n5. Identify where a specific topic, concept, or piece of information appears in the document.\n6. Explain concepts using the retrieved source material.\n7. Compare information when the requested information exists in the uploaded documents.\n8. Clearly indicate when the requested information cannot be found in the uploaded documents.\n\nDo NOT require the user to know the exact wording used in the document.\n\nThe user may ask questions using natural language.\n\n==================================================\nDOCUMENT AS THE PRIMARY SOURCE\n==============================\n\nThe uploaded textbook, research paper, article, or academic document is the primary source.\n\nWhen answering a question:\n\n1. Search/retrieve relevant document content first.\n2. Use the retrieved\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -512,
+        144
+      ],
+      "id": "86033dcc-daa9-4dd3-8247-83f4746ba799",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 25
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -560,
+        384
+      ],
+      "id": "ac196d28-1970-413c-b50a-70be058f16f6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "retrieve data when user asks for relevant data about ",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "k----b",
+          "mode": "list",
+          "cachedResultName": "k----b"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        304
+      ],
+      "id": "ab28c353-eae3-40d8-8202-00e91b273771",
+      "name": "Pinecone Vector Store"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -768,
+        384
+      ],
+      "id": "a2670c0b-b214-4dbe-ad76-3d86e6f506ad",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        448
+      ],
+      "id": "387f26fe-794c-4780-a1c8-cd2514fa0a22",
+      "name": "Embeddings Google Gemini"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1d0676b6-2aae-4294-914a-98540ca9146a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0f417c260f5f679f91b9fabcdd4b0791652a1a294c578c271827bec10ddf8a1d"
+  },
+  "nodeGroups": [],
+  "id": "kxxTYBqldfqDv9Gj",
+  "tags": []
+}

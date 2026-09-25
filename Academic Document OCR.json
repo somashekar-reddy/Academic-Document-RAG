@@ -1,0 +1,359 @@
+{
+  "name": "Upload Academic Document",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        304
+      ],
+      "id": "6f27511f-91d0-45ef-8279-5769365d93f0",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "94375306-a4c8-4680-ac44-a0a94c81ad9b",
+      "name": "Upload Document to Mistral"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiry",
+              "value": "24"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer $MISTRAL_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "14ee670c-b04a-4d79-8408-7f47e7b3b872",
+      "name": "Get Document URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral-ocr-latest\",\n  \"document\": {\n    \"type\": \"document_url\",\n    \"document_url\": \"{{ $json.url }}\"\n  },\n  \"include_image_base64\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "0d1ec54d-c331-4b1b-a282-7e94972b8672",
+      "name": "Run Mistral OCR"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.pages[0].markdown }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "document_information",
+              "description": "Identify and retrieve relevant information from the uploaded textbook, research paper, article, or academic document based on the user's question."
+            },
+            {
+              "name": "content_retrieval",
+              "description": "Retrieve the most relevant sections, passages, or information from the uploaded document to answer the user's question. Use the source document as the primary source and do not invent information that is not present in it."
+            },
+            {
+              "name": "summarization",
+              "description": "Summarize the relevant content from the uploaded document when the user asks for a summary of a page, section, chapter, topic, or passage."
+            },
+            {
+              "name": "location_retrieval",
+              "description": "Identify where relevant information appears in the uploaded document when the user asks which page, section, chapter, or part of the document contains a specific topic or concept."
+            },
+            {
+              "name": "question_answering",
+              "description": "Answer questions using information retrieved from the uploaded textbook, research paper, or academic document. Ground the response in the available source material and avoid unsupported information."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "a0fd512c-199e-40f3-8767-fa279bebec1e",
+      "name": "Extract Academic Content"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.6-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        272
+      ],
+      "id": "dcb218c1-fad2-4e27-98fb-c16357b994e1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "k----b",
+          "mode": "list",
+          "cachedResultName": "k----b"
+        },
+        "options": {
+          "pineconeNamespace": "academic_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        16
+      ],
+      "id": "39f75e23-e61c-4a96-90f8-4699d3b50e6d",
+      "name": "Pinecone Vector Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        288
+      ],
+      "id": "6bcefee2-6337-41a1-b43e-e3c2c068b158",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "formTitle": "OCR",
+        "formDescription": "upload a pdf",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "data",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -288,
+        160
+      ],
+      "id": "a3eae2eb-04b4-4938-a733-3249f7bb99bb",
+      "name": "On form submission",
+      "webhookId": "b8d5d3c1-a88c-4202-a6fa-6aaac599da01"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const extracted = $json;\n\nconst pageContent = JSON.stringify(extracted);\n\nreturn {\n  json: {\n    pageContent: pageContent,\n    metadata: {\n      source: \"academic_document\"\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        0
+      ],
+      "id": "5d378939-473b-4e93-bd05-cfce9e239ffb",
+      "name": "Prepare Vector Data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload to mistrial": {
+      "main": [
+        [
+          {
+            "node": "get signed url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get signed url": {
+      "main": [
+        [
+          {
+            "node": "get ocr result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get ocr result": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScPrepare Vector Payloadript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "upload to mistrial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScPrepare Vector Payloadript": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ec377a69-1d4d-49b0-af7c-6d65e070c183",
+  "meta": {
+    "instanceId": "0f417c260f5f679f91b9fabcdd4b0791652a1a294c578c271827bec10ddf8a1d"
+  },
+  "nodeGroups": [],
+  "id": "6qIj5Qd6w95YdHrS",
+  "tags": []
+}
